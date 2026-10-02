@@ -1,0 +1,11 @@
+{
+  "comment": "Registry of coding agents that read the Agent Skills format (agentskills.io). Each entry is <agent-name>: <personal skills directory>. '~' is expanded to the home directory. To support a new agent, add one line here - no script changes needed.",
+  "agents": {
+    "claude": "~/.claude/skills",
+    "codex": "~/.codex/skills",
+    "copilot": "~/.copilot/skills",
+    "cursor": "~/.cursor/skills",
+    "shared": "~/.agents/skills"
+  },
+  "defaultAgents": ["claude", "codex"]
+}
