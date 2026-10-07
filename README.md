@@ -9,6 +9,8 @@ Personal Agent Skills ([agentskills.io](https://agentskills.io) format). This re
 - `architect` - sketch a design before implementing, with parallel candidate exploration
 - `blast-radius` - prove a change is safe before merging, not just assert it
 - `log-dig` - investigate a question against runtime/hardware log files without blowing out context
+- `plan-to-issues` - split a plan into a milestone and issues from the project's editable templates, and open them on GitHub (`gh`) or GitLab (`glab`)
+- `e2e-kickoff` - find a project's user workflows in the source code and plan one e2e-test issue per workflow, then hand the plan to `plan-to-issues`
 - `continual-learning` - automatically keeps `~/.claude/CLAUDE.md` current from session transcripts (needs its Stop hook wired in manually - see `continual-learning/HOOK_SETUP.md`)
 
 ## Installing (linking into your coding agents)
