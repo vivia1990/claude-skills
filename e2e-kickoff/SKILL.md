@@ -5,7 +5,12 @@ description: Plan end-to-end tests for an existing project that has none. Sub-ag
 
 # E2E kickoff
 
-Plan end-to-end tests for a project with none, so coding agents can later verify their own work by running them. This skill only plans. It ends with a committed plan file and, if the user agrees, issues opened by `plan-to-issues`. Writing the tests is done later: one issue, one agent, one PR.
+Plan end-to-end tests for a project with none, so coding agents can later verify their own work by running them. This skill only plans. It ends with a committed plan file and, if the user agrees, issues opened by `plan-to-issues`. What comes after is someone else's job:
+
+1. `grill-issue` shapes each workflow issue with the user and adds the `ready` label.
+2. `run-issues` writes the tests for each `ready` issue: one issue, one agent, one PR.
+
+The issue templates are the contract between those steps.
 
 Run from the project's repo root. Each step ends at a checkpoint: wait for the user's answer before moving on.
 
@@ -56,9 +61,11 @@ Check what the project already has (test runner, CI config, package manager, how
 
 ## 3. Install the templates
 
-The project's issue template folder is `.github/ISSUE_TEMPLATE/` if `origin` is on github.com, `.gitlab/issue_templates/` otherwise. If `.plan-to-issues.yml` names a forge, use that instead.
+Detect the forge as step 1 of `plan-to-issues` does: `.plan-to-issues.yml` if it exists, else the host of `origin`, checking `gh` and `glab` login for hosts other than github.com. If that is still ambiguous, ask the user once and write the answer into `.plan-to-issues.yml`, so every later skill agrees. The project's issue template folder is `.github/ISSUE_TEMPLATE/` on GitHub (GitHub Enterprise included), `.gitlab/issue_templates/` on GitLab.
 
 If `e2e-setup.md` or `e2e-workflow.md` isn't there yet, copy it from this skill's `templates/`. On GitHub, add frontmatter (`name`, `about`, `labels: [e2e]`) so the template also shows in the web UI. If a template already exists, use it as it is: the project's version wins.
+
+Keep the templates' HTML comments. They are the contract that `grill-issue` and `run-issues` follow: the version, who may change each section, the Ready checklist. `plan-to-issues` copies them into every issue.
 
 **Checkpoint:** show the templates. The user edits them now, because the plan is written against their sections.
 
@@ -73,11 +80,13 @@ Milestone: E2E tests
 
 ## Issue: Set up e2e testing
 Type: e2e-setup
+Labels: e2e, ready
 <one subsection per ## section of the e2e-setup template>
 
 ## Issue: E2E — <workflow name>
 Type: e2e-workflow
 Depends on: Set up e2e testing[, E2E — <other workflow>]
+Labels: e2e
 <one subsection per ## section of the e2e-workflow template>
 
 ...one workflow issue per critical or important workflow...
@@ -102,16 +111,20 @@ Rules for the content:
   ```
 - Refer to fixtures by name. Every fixture must be defined in the setup issue.
 - List the source files from Step 1, so the implementing agent knows where to start.
-- Don't put anything in the plan that the code doesn't support. If the code doesn't show how something behaves, write it as an open question in the issue, not as an assertion.
+- The setup issue is created `ready`: its choices were reviewed at the checkpoints. Workflow issues are not; they wait for `grill-issue`.
+- Leave `Ready checklist` and `Acceptance criteria` to the template, which already has their items. Add an item only if this issue needs one the template doesn't have.
+- Don't put anything in the plan that the code doesn't support. If the code doesn't show how something behaves, write it as an open question in the issue (an unchecked checklist item), not as an assertion.
 
 **Checkpoint:** the user reviews the plan file. Apply their changes, then commit only that file (and any newly installed templates) once they approve.
 
 ## 5. Open the issues
 
-Ask: "Open the issues now?" If yes, run `plan-to-issues` with:
+Ask: "Open the issues now?" If yes, call the Skill tool with `plan-to-issues` and the arguments `docs/plans/e2e-kickoff.md --template e2e-workflow`.
 
-```
-/plan-to-issues docs/plans/e2e-kickoff.md --template e2e-workflow
-```
+`plan-to-issues` shows its own preview and asks before creating anything. If the user says no, tell them to run `/plan-to-issues docs/plans/e2e-kickoff.md --template e2e-workflow` later.
 
-`plan-to-issues` shows its own preview and asks before creating anything. If the user says no, tell them the command to run later.
+Finish by telling the user what happens next:
+
+1. `/run-issues "E2E tests"` implements the setup issue now: it is already `ready`.
+2. `/grill-issue e2e-workflow` shapes the workflow issues, one per run, and adds `ready`.
+3. Once the setup PR is merged, `/run-issues "E2E tests"` writes the tests for every `ready` issue. Run it again as more issues become `ready`.

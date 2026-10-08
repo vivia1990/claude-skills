@@ -94,6 +94,7 @@ Wait for explicit approval.
 1. Create the milestone and the missing labels.
 2. Create issues in dependency order: an issue's blockers first. Just before creating each one, replace its "Blocked by" titles with `#N` of the blocking issues (whether just created or already existing).
 3. Read back each issue's number and URL from the creation command's JSON output, as the forge reference describes.
+4. Link each issue created in this run to its blockers with the forge's native blocking link (forge reference, "Blocking links"), so the forge itself shows which issues can start. Keep the "Blocked by" line too: it is what works where native links don't. If the forge refuses them (GitLab Free, older GitHub Enterprise), stop linking for the rest of the run and say so in the final table.
 
 If a command fails, stop. Report what was created and the error. A re-run will skip what already exists and pick up where it stopped.
 

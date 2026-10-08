@@ -1,6 +1,6 @@
 # GitLab (`glab`)
 
-Run every command from the repo root. `:fullpath` is filled in by `glab` from the current repo's remote. For a self-hosted instance, `glab` picks the host from the remote; add `--hostname <host>` if it doesn't. `glab api` has no `--jq` flag, so pipe its output to `jq`.
+The forge commands for `plan-to-issues`, `grill-issue` and `run-issues`. Run every command from the repo root. `:fullpath` is filled in by `glab` from the current repo's remote. For a self-hosted instance, `glab` picks the host from the remote; add `--hostname <host>` if it doesn't. `glab api` has no `--jq` flag, so pipe its output to `jq`.
 
 URL-encode anything you put in a query string: `jq -rn --arg v "$TEXT" '$v|@uri'`.
 
@@ -67,3 +67,91 @@ glab api projects/:fullpath/issues \
 ```
 
 `.iid` is the `#N` used in references. Don't use `glab issue create` here: it takes the body only as an inline string and its text output is meant for people, not parsing.
+
+## Blocking links
+
+GitLab's "blocked by" issue links, shown on the issue page. They need GitLab Premium or Ultimate; on Free the call fails, so rely on the `**Blocked by:**` line in the description.
+
+```
+PROJECT_ID=$(glab api projects/:fullpath | jq .id)
+glab api "projects/:fullpath/issues/$N/links" \
+  -F target_project_id="$PROJECT_ID" -F target_issue_iid="$BLOCKER" -f link_type=is_blocked_by >/dev/null
+```
+
+Read an issue's blockers, open and closed:
+
+```
+glab api "projects/:fullpath/issues/$N/links" \
+  | jq -r '.[] | select(.link_type=="is_blocked_by") | [.iid, .state] | @tsv'
+```
+
+## Who am I
+
+```
+glab api user | jq -r .username
+```
+
+## Read an issue
+
+The issue, then its comments without system notes:
+
+```
+glab api "projects/:fullpath/issues/$N" \
+  | jq '{iid, title, state, description, labels, assignees: [.assignees[].username], milestone: .milestone.title, web_url}'
+glab api "projects/:fullpath/issues/$N/notes?sort=asc&per_page=100" --paginate \
+  | jq -rs 'add | .[] | select(.system | not) | "\(.author.username): \(.body)"'
+```
+
+## List issues
+
+`--paginate` can print one JSON array per page, so slurp them with `jq -s 'add'`.
+
+Every issue in a milestone, any state:
+
+```
+glab api "projects/:fullpath/issues?milestone=$(jq -rn --arg v "$TITLE" '$v|@uri')&scope=all&state=all&per_page=100" --paginate \
+  | jq -s 'add | .[] | {iid, title, state, description, labels, assignees: [.assignees[].username], web_url}'
+```
+
+The open issues of one template that still need grilling (no `ready`, nobody assigned), lowest number first:
+
+```
+glab api "projects/:fullpath/issues?scope=all&state=opened&per_page=100" --paginate \
+  | jq -rs --arg m "<!-- contract: $TEMPLATE v" 'add
+      | [.[] | select((.description // "") | contains($m))
+             | select(.labels | index("ready") | not)
+             | select(.assignees | length == 0)]
+      | sort_by(.iid) | .[] | [.iid, .title] | @tsv'
+```
+
+## Update an issue
+
+The label must exist first (see Labels).
+
+```
+glab api --method PUT "projects/:fullpath/issues/$N" -F description=@"$BODY_FILE" >/dev/null
+glab issue update "$N" --label ready            # --unlabel ready
+glab issue update "$N" --assignee="+$ME"        # release: --assignee="-$ME"
+glab api "projects/:fullpath/issues/$N/notes" -F body=@"$COMMENT_FILE" >/dev/null
+```
+
+`$ME` is the username from "Who am I". The `+`/`-` prefix adds or removes only you; without it, `--assignee` replaces every assignee.
+
+## Pull requests (merge requests)
+
+Open as a draft, mark ready once the checks pass. Put `Closes #N` in the description, so merging into the default branch closes the issue. Removing the source branch on merge makes GitLab retarget a stacked merge request to the default branch once the one below it is merged:
+
+```
+glab api projects/:fullpath/merge_requests \
+  -f source_branch="$BRANCH" -f target_branch="$BASE" \
+  -f title="Draft: $TITLE" -F description=@"$BODY_FILE" -F remove_source_branch=true \
+  | jq -r '[.iid, .web_url] | @tsv'
+glab mr update "$MR" --ready
+```
+
+The open merge requests, with their branches:
+
+```
+glab api "projects/:fullpath/merge_requests?state=opened&per_page=100" --paginate \
+  | jq -rs 'add | .[] | [.iid, .source_branch, .draft, .web_url] | @tsv'
+```

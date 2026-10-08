@@ -1,6 +1,6 @@
 # GitHub (`gh`)
 
-Run every command from the repo root. `{owner}/{repo}` in `gh api` paths is filled in by `gh` from the current repo. For GitHub Enterprise, prefix commands with `GH_HOST=<host>`.
+The forge commands for `plan-to-issues`, `grill-issue` and `run-issues`. Run every command from the repo root. `{owner}/{repo}` in `gh api` paths is filled in by `gh` from the current repo. For GitHub Enterprise, prefix commands with `GH_HOST=<host>`.
 
 ## Check login
 
@@ -55,4 +55,80 @@ gh api "repos/{owner}/{repo}/issues" \
   -F milestone=$MILESTONE_NUMBER \
   -f "labels[]=label-a" -f "labels[]=label-b" \
   --jq '[.number, .html_url] | @tsv'
+```
+
+## Blocking links
+
+GitHub's issue dependencies, shown in the issue's sidebar. The API takes the blocker's database `id`, not its number:
+
+```
+BLOCKER_ID=$(gh api "repos/{owner}/{repo}/issues/$BLOCKER" --jq .id)
+gh api --method POST "repos/{owner}/{repo}/issues/$N/dependencies/blocked_by" -F issue_id="$BLOCKER_ID" --silent
+```
+
+Read an issue's blockers, open and closed:
+
+```
+gh api "repos/{owner}/{repo}/issues/$N/dependencies/blocked_by" --jq '.[] | [.number, .state] | @tsv'
+```
+
+If these return 404 (dependencies not available, e.g. an older GitHub Enterprise Server), rely on the `**Blocked by:**` line in the body.
+
+## Who am I
+
+```
+gh api user --jq .login
+```
+
+## Read an issue
+
+```
+gh issue view "$N" --json number,title,body,state,labels,assignees,milestone,comments,url
+```
+
+## List issues
+
+Every issue in a milestone, any state:
+
+```
+gh issue list --milestone "$TITLE" --state all --limit 1000 \
+  --json number,title,state,body,labels,assignees,url
+```
+
+The open issues of one template that still need grilling (no `ready`, nobody assigned), lowest number first:
+
+```
+gh issue list --state open --limit 1000 --json number,title,body,labels,assignees \
+  --jq "[.[] | select(.body | contains(\"<!-- contract: $TEMPLATE v\"))
+         | select([.labels[].name] | index(\"ready\") | not)
+         | select(.assignees | length == 0)]
+        | sort_by(.number) | .[] | [.number, .title] | @tsv"
+```
+
+## Update an issue
+
+The label must exist first (see Labels).
+
+```
+gh issue edit "$N" --body-file "$BODY_FILE"
+gh issue edit "$N" --add-label ready            # --remove-label ready
+gh issue edit "$N" --add-assignee @me           # --remove-assignee @me
+gh issue comment "$N" --body-file "$COMMENT_FILE"
+```
+
+## Pull requests
+
+Open as a draft, mark ready once the checks pass. Put `Closes #N` in the body, so merging into the default branch closes the issue:
+
+```
+gh pr create --draft --base "$BASE" --head "$BRANCH" --title "$TITLE" --body-file "$BODY_FILE"
+gh pr view "$BRANCH" --json number,url --jq '[.number, .url] | @tsv'
+gh pr ready "$PR"
+```
+
+The open pull requests, with their branches:
+
+```
+gh pr list --state open --limit 1000 --json number,headRefName,isDraft,url \
+  --jq '.[] | [.number, .headRefName, .isDraft, .url] | @tsv'
 ```
