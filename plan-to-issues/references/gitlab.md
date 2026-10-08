@@ -1,6 +1,6 @@
 # GitLab (`glab`)
 
-The forge commands for `plan-to-issues`, `grill-issue` and `run-issues`. Run every command from the repo root. `:fullpath` is filled in by `glab` from the current repo's remote. For a self-hosted instance, `glab` picks the host from the remote; add `--hostname <host>` if it doesn't. `glab api` has no `--jq` flag, so pipe its output to `jq`.
+The forge commands for `plan-to-issues`, `grill-issue`, `run-issues` and `issue-contract`. Run every command from the repo root. `:fullpath` is filled in by `glab` from the current repo's remote. For a self-hosted instance, `glab` picks the host from the remote; add `--hostname <host>` if it doesn't. `glab api` has no `--jq` flag, so pipe its output to `jq`.
 
 URL-encode anything you put in a query string: `jq -rn --arg v "$TEXT" '$v|@uri'`.
 
@@ -31,8 +31,10 @@ The issue API takes the milestone's `id` (not `iid`).
 
 ```
 glab api "projects/:fullpath/labels?include_ancestor_groups=true&per_page=100" --paginate | jq -r '.[].name'
-glab label create --name "$NAME" --color "#428BCA" --description "$DESC"
+glab label create --name "$NAME" --color "#$COLOR" --description "$DESC"
 ```
+
+`$COLOR` is the 6-digit hex the issue-contract spec gives, without `#`; GitLab needs the `#` added as above.
 
 ## Find issues that already exist
 
@@ -113,15 +115,17 @@ glab api "projects/:fullpath/issues?milestone=$(jq -rn --arg v "$TITLE" '$v|@uri
   | jq -s 'add | .[] | {iid, title, state, description, labels, assignees: [.assignees[].username], web_url}'
 ```
 
-The open issues of one template that still need grilling (no `ready`, nobody assigned), lowest number first:
+## Open issues with their contract
+
+Every open issue, lowest number first: number, contract name and version from its marker (`-` when it has none), labels, assignees, title. The marker counts only before the description's first `##` line, as the issue-contract spec says:
 
 ```
 glab api "projects/:fullpath/issues?scope=all&state=opened&per_page=100" --paginate \
-  | jq -rs --arg m "<!-- contract: $TEMPLATE v" 'add
-      | [.[] | select((.description // "") | contains($m))
-             | select(.labels | index("ready") | not)
-             | select(.assignees | length == 0)]
-      | sort_by(.iid) | .[] | [.iid, .title] | @tsv'
+  | jq -rs 'add | sort_by(.iid) | .[]
+      | ((.description // "") | if startswith("##") then "" else (split("\n##")[0] // "") end
+         | [capture("<!-- contract: (?<name>\\S+) v(?<version>[0-9]+)")] | .[0] // {}) as $c
+      | [.iid, ($c.name // "-"), ($c.version // "-"), (.labels | join(",")),
+         ([.assignees[].username] | join(",")), .title] | @tsv'
 ```
 
 ## Update an issue
@@ -130,7 +134,7 @@ The label must exist first (see Labels).
 
 ```
 glab api --method PUT "projects/:fullpath/issues/$N" -F description=@"$BODY_FILE" >/dev/null
-glab issue update "$N" --label ready            # --unlabel ready
+glab issue update "$N" --label "$LABEL"         # --unlabel "$LABEL"
 glab issue update "$N" --assignee="+$ME"        # release: --assignee="-$ME"
 glab api "projects/:fullpath/issues/$N/notes" -F body=@"$COMMENT_FILE" >/dev/null
 ```

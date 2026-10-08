@@ -1,18 +1,20 @@
 ---
 name: plan-to-issues
-description: Split a plan into a milestone and issues, write each issue body from the project's editable issue templates, preview everything, then open them on GitHub (gh) or GitLab (glab) in dependency order. Re-runs never duplicate. Use for "/plan-to-issues", "open issues for this plan", "turn this plan into issues/a milestone", or when another skill hands over a plan file to be opened as issues.
+description: Split a plan into a milestone and issues, write each issue body from the project's issue contracts (.issue-contracts/), preview everything, then open them on GitHub (gh) or GitLab (glab) in dependency order. Re-runs never duplicate. Use for "/plan-to-issues", "open issues for this plan", "turn this plan into issues/a milestone", or when another skill hands over a plan file to be opened as issues.
 ---
 
 # Plan to issues
 
 Turn a plan into issues on the project's forge. This skill only opens issues; implementing them is someone else's job.
 
-Usage: `/plan-to-issues <plan> [--template <name-or-path>]`
+Usage: `/plan-to-issues <plan> [--contract <name>]`
 
 - `<plan>` is a markdown file path or plan text pasted into the conversation.
-- `--template` is the default template for every issue: a template name (looked up as below) or a file path.
+- `--contract` is the default contract for every issue: a contract name, as in `.issue-contracts/<name>/`.
 
-Nothing is written to the forge until the user has approved both the split (step 3) and the full preview (step 5).
+Every issue is written from a contract. Read `../issue-contract/references/spec.md` (next to this skill's folder) before starting: it defines contracts, their versions, and how an opener uses them.
+
+Nothing is written to the forge until the user has approved both the split (step 3) and the full preview (step 6).
 
 ## 1. Detect the forge
 
@@ -27,23 +29,21 @@ Then load `references/github.md` or `references/gitlab.md` and use only the comm
 forge: gitlab            # github | gitlab
 host: git.example.com
 labels: [planned]        # added to every issue
-templates:               # issue type -> template name, only when they differ
+contracts:               # issue type -> contract name, only when they differ
   bug: defect
 ```
 
-## 2. Resolve templates
+An older file may call `contracts:` `templates:`; read it the same way.
 
-Template folder: `.github/ISSUE_TEMPLATE/` on GitHub, `.gitlab/issue_templates/` on GitLab. A template's name is its filename without `.md`. Only markdown templates are supported; skip GitHub `.yml` issue forms.
+## 2. Choose the contracts
 
-Choose each issue's template in this order:
+A contract's name is its folder in `.issue-contracts/`. Choose each issue's contract in this order:
 
-1. a `Type: <type>` line in that issue's section of the plan (mapped through `templates:` in the config, else used as the name),
-2. the `--template` argument,
-3. your own choice among the project's templates, from what the issue is (feature, bug, ...).
+1. a `Type: <type>` line in that issue's section of the plan (mapped through `contracts:` in the config, else used as the name),
+2. the `--contract` argument,
+3. your own choice among the project's contracts and this skill's `templates/` (`bug`, `feature`), from what the issue is.
 
-If a chosen name isn't in the project's folder but exists in this skill's `templates/`, show it to the user and offer to copy it into the project's folder so they can edit it before continuing. On GitHub, add frontmatter when copying (`name`, `about`, `labels`) so the template also shows up in the web UI. Never edit an existing project template.
-
-A template's `##` headings are its required sections, in order. Labels in a GitHub template's frontmatter are added to issues that use it.
+If `.github/ISSUE_TEMPLATE/` or `.gitlab/issue_templates/` has a template whose body starts with `<!-- contract:`, the project still uses the old layout: stop and tell the user to run `/issue-contract migrate` first.
 
 ## 3. Propose the split
 
@@ -51,29 +51,37 @@ Read the whole plan and decide the milestone and the issues:
 
 - One issue = one piece of work that can be implemented and merged on its own.
 - If the plan already marks out issues (e.g. `## Issue: ...` headings), follow them.
-- A `Labels: <a>, <b>` line in an issue's section adds those labels to that issue, on top of the config's `labels` and the template's.
+- A `Labels: <a>, <b>` line in an issue's section adds those labels to that issue, on top of the config's `labels` and the contract's. `ready` is the exception: the contract's Lifecycle decides it (step 5).
 - Skip anything the plan marks as deferred, out of scope, or not to be opened.
 - The milestone is the plan's stated milestone, else propose one. A single-issue plan may have none.
 - Record dependencies between issues. Stop and report if they form a cycle.
 
-Show the split as a table: slug, title, type → template, labels, depends on. Give each issue a stable kebab-case slug from its title, prefixed with the milestone slug (`e2e-tests/user-registration`). Wait for approval; redo the table on feedback before writing any bodies.
+Show the split as a table: slug, title, type → contract, labels, depends on. Give each issue a stable kebab-case slug from its title, prefixed with the milestone slug (`e2e-tests/user-registration`). Wait for approval; redo the table on feedback before writing any bodies.
 
-## 4. Write the bodies
+## 4. Make sure the contracts are published
 
-For each issue, write the body using exactly the template's `##` sections, in order, filled with content from the plan. Don't invent requirements the plan doesn't state.
+For every contract the approved split uses, follow the spec's "Opening issues": take the newest published version, or seed one and get it published first. This skill seeds only its own `bug` and `feature`: show a seeded one and wait for the user, who may adapt it, before committing it. Any other missing contract stops the run: name the skill that sets it up, as the spec says.
 
-Keep what the template already has: the text before its first `##` heading (but not GitHub frontmatter), and the HTML comments and fixed items, such as checklists, under each section. They often hold instructions for whoever works on the issue next. Add the plan's content after them, without repeating them. If a section would still be empty, write `None.` rather than dropping it.
+Read each contract's version in use from the default branch, as the spec's "Reading a contract" says.
 
-Prepend to every body:
+## 5. Write the bodies
 
-```
-<!-- plan-to-issues: <slug> -->
-**Blocked by:** <dependency titles, resolved to #N at creation time>
-```
+For each issue, write the body as the spec's "Opening issues" lays it out, from its contract's version in use:
 
-Omit the "Blocked by" line when there are no dependencies. Write each body to its own file in a temporary directory outside the repo.
+1. the contract's marker, copied from line 1 of that version,
+2. this skill's own marker and the dependencies:
+   ```
+   <!-- plan-to-issues: <slug> -->
+   **Blocked by:** <dependency titles, resolved to #N at creation time>
+   ```
+   Omit the "Blocked by" line when there are no dependencies,
+3. every section of the contract, in order, with its owner comment and fixed items (such as checklists), then the plan's content for it. Don't repeat what the comment says, and don't invent requirements the plan doesn't state. If a section would still be empty, write `None.` rather than dropping it.
 
-## 5. Preview
+Never copy the contract's rules comment or its `from:` line. Write each body to its own file in a temporary directory outside the repo.
+
+Each issue's labels are the config's `labels`, the ones the contract's Labels field gives the opener, and the plan's `Labels:` line without `ready`. Add `ready` only when the contract's Lifecycle says it isn't grilled.
+
+## 6. Preview
 
 Before showing the preview, look up what already exists (commands in the forge reference):
 
@@ -85,13 +93,13 @@ Show:
 
 - the milestone: existing or to be created (with its due date, if the plan gives one),
 - labels to be created,
-- each issue: **create** or **skip (exists as #N)**, followed by its full body. If there are more than five new issues, show the table with each body's file path and print only the bodies the user asks for.
+- each issue: its contract and version, then **create** or **skip (exists as #N)**, followed by its full body. If there are more than five new issues, show the table with each body's file path and print only the bodies the user asks for.
 
 Wait for explicit approval.
 
-## 6. Create
+## 7. Create
 
-1. Create the milestone and the missing labels.
+1. Create the milestone and the missing labels, with the description and colour the spec's "Labels" gives each one.
 2. Create issues in dependency order: an issue's blockers first. Just before creating each one, replace its "Blocked by" titles with `#N` of the blocking issues (whether just created or already existing).
 3. Read back each issue's number and URL from the creation command's JSON output, as the forge reference describes.
 4. Link each issue created in this run to its blockers with the forge's native blocking link (forge reference, "Blocking links"), so the forge itself shows which issues can start. Keep the "Blocked by" line too: it is what works where native links don't. If the forge refuses them (GitLab Free, older GitHub Enterprise), stop linking for the rest of the run and say so in the final table.

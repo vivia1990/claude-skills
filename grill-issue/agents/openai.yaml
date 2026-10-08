@@ -1,5 +1,5 @@
 interface:
   display_name: "Grill Issue"
-  short_description: "Grill one issue into shape against its template"
+  short_description: "Grill one issue into shape against its contract"
 policy:
   allow_implicit_invocation: false

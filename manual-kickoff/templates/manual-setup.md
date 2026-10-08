@@ -1,7 +1,9 @@
-<!-- contract: manual-setup v1
-Sets up everything the manual's issues share: layout, style guide, build, screenshot capture, demo data and CI.
-Lifecycle: created with the `ready` label, because its choices were reviewed when the manual's plan was approved. It isn't grilled.
-Every other manual issue depends on this one. It is the only issue that creates or changes shared files.
+<!-- contract: manual-setup v1 -->
+<!--
+Purpose: sets up everything the manual's issues share: layout, style guide, build, screenshot capture, demo data and CI.
+Lifecycle: not grilled. Opened `ready`, because its choices were reviewed when the manual's plan was approved. Every other manual issue depends on this one.
+Labels: the opener applies `manual`.
+Implementer: this is the only manual issue that creates or changes shared files.
 -->
 
 ## Summary
@@ -30,6 +32,7 @@ Every other manual issue depends on this one. It is the only issue that creates 
 ## How to run locally
 
 ## Acceptance criteria
+<!-- implementer ticks these -->
 
 - [ ] `docs/manual/` skeleton in place: `manual.yaml`, `STYLE.md`, every chapter folder with its `00-chapter.md`
 - [ ] The build produces the PDF locally from the Markdown, with the chosen template

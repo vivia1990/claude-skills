@@ -1,6 +1,6 @@
 # GitHub (`gh`)
 
-The forge commands for `plan-to-issues`, `grill-issue` and `run-issues`. Run every command from the repo root. `{owner}/{repo}` in `gh api` paths is filled in by `gh` from the current repo. For GitHub Enterprise, prefix commands with `GH_HOST=<host>`.
+The forge commands for `plan-to-issues`, `grill-issue`, `run-issues` and `issue-contract`. Run every command from the repo root. `{owner}/{repo}` in `gh api` paths is filled in by `gh` from the current repo. For GitHub Enterprise, prefix commands with `GH_HOST=<host>`.
 
 ## Check login
 
@@ -24,8 +24,10 @@ gh api "repos/{owner}/{repo}/milestones" -f title="$TITLE" -f due_on=YYYY-MM-DDT
 
 ```
 gh label list --limit 1000 --json name --jq '.[].name'
-gh label create "$NAME" --color 428BCA --description "$DESC"
+gh label create "$NAME" --color "$COLOR" --description "$DESC"
 ```
+
+`$COLOR` is the 6-digit hex the issue-contract spec gives, without `#`.
 
 ## Find issues that already exist
 
@@ -95,14 +97,17 @@ gh issue list --milestone "$TITLE" --state all --limit 1000 \
   --json number,title,state,body,labels,assignees,url
 ```
 
-The open issues of one template that still need grilling (no `ready`, nobody assigned), lowest number first:
+## Open issues with their contract
+
+Every open issue, lowest number first: number, contract name and version from its marker (`-` when it has none), labels, assignees, title. The marker counts only before the body's first `##` line, as the issue-contract spec says:
 
 ```
 gh issue list --state open --limit 1000 --json number,title,body,labels,assignees \
-  --jq "[.[] | select(.body | contains(\"<!-- contract: $TEMPLATE v\"))
-         | select([.labels[].name] | index(\"ready\") | not)
-         | select(.assignees | length == 0)]
-        | sort_by(.number) | .[] | [.number, .title] | @tsv"
+  --jq 'sort_by(.number) | .[]
+        | ((.body // "") | if startswith("##") then "" else (split("\n##")[0] // "") end
+           | [capture("<!-- contract: (?<name>\\S+) v(?<version>[0-9]+)")] | .[0] // {}) as $c
+        | [.number, ($c.name // "-"), ($c.version // "-"),
+           ([.labels[].name] | join(",")), ([.assignees[].login] | join(",")), .title] | @tsv'
 ```
 
 ## Update an issue
@@ -111,7 +116,7 @@ The label must exist first (see Labels).
 
 ```
 gh issue edit "$N" --body-file "$BODY_FILE"
-gh issue edit "$N" --add-label ready            # --remove-label ready
+gh issue edit "$N" --add-label "$LABEL"         # --remove-label "$LABEL"
 gh issue edit "$N" --add-assignee @me           # --remove-assignee @me
 gh issue comment "$N" --body-file "$COMMENT_FILE"
 ```

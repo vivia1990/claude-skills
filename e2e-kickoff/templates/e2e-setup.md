@@ -1,7 +1,9 @@
-<!-- contract: e2e-setup v1
-Sets up what every e2e workflow issue shares: the framework, starting the app under test, the fixtures, a smoke test and CI.
-Lifecycle: created with the `ready` label, because its choices were reviewed when the e2e plan was approved. It isn't grilled.
-Every e2e workflow issue depends on this one. It is the only issue that creates or changes shared test code: config, fixtures, helpers.
+<!-- contract: e2e-setup v1 -->
+<!--
+Purpose: sets up what every e2e workflow issue shares: the framework, starting the app under test, the fixtures, a smoke test and CI.
+Lifecycle: not grilled. Opened `ready`, because its choices were reviewed when the e2e plan was approved. Every e2e workflow issue depends on this one.
+Labels: the opener applies `e2e`.
+Implementer: this is the only e2e issue that creates or changes shared test code: config, fixtures, helpers.
 -->
 
 ## Summary
@@ -19,6 +21,7 @@ Every e2e workflow issue depends on this one. It is the only issue that creates 
 ## How to run locally
 
 ## Acceptance criteria
+<!-- implementer ticks these -->
 
 - [ ] Framework installed and configured
 - [ ] Every fixture listed above is implemented and documented
