@@ -11,6 +11,7 @@ Personal Agent Skills ([agentskills.io](https://agentskills.io) format). This re
 - `log-dig` - investigate a question against runtime/hardware log files without blowing out context
 - `plan-to-issues` - split a plan into a milestone and issues from the project's editable templates, and open them on GitHub (`gh`) or GitLab (`glab`)
 - `e2e-kickoff` - find a project's user workflows in the source code and plan one e2e-test issue per workflow, then hand the plan to `plan-to-issues`
+- `manual-kickoff` - plan a user manual (Markdown → pandoc → PDF): find a project's roles, sections and user workflows in the source code, plan one documentation issue per workflow whose template is the contract for the griller (adds `ready`) and the writer, then hand the plan to `plan-to-issues`. Runs only through `/manual-kickoff`
 - `continual-learning` - automatically keeps `~/.claude/CLAUDE.md` current from session transcripts (needs its Stop hook wired in manually - see `continual-learning/HOOK_SETUP.md`)
 
 ## Installing (linking into your coding agents)

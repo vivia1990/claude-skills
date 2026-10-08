@@ -51,6 +51,7 @@ Read the whole plan and decide the milestone and the issues:
 
 - One issue = one piece of work that can be implemented and merged on its own.
 - If the plan already marks out issues (e.g. `## Issue: ...` headings), follow them.
+- A `Labels: <a>, <b>` line in an issue's section adds those labels to that issue, on top of the config's `labels` and the template's.
 - Skip anything the plan marks as deferred, out of scope, or not to be opened.
 - The milestone is the plan's stated milestone, else propose one. A single-issue plan may have none.
 - Record dependencies between issues. Stop and report if they form a cycle.
@@ -59,7 +60,9 @@ Show the split as a table: slug, title, type → template, labels, depends on. G
 
 ## 4. Write the bodies
 
-For each issue, write the body using exactly the template's `##` sections, in order, filled with content from the plan. Don't invent requirements the plan doesn't state. If the plan has nothing for a section, write `None.` rather than dropping it.
+For each issue, write the body using exactly the template's `##` sections, in order, filled with content from the plan. Don't invent requirements the plan doesn't state.
+
+Keep what the template already has: the text before its first `##` heading (but not GitHub frontmatter), and the HTML comments and fixed items, such as checklists, under each section. They often hold instructions for whoever works on the issue next. Add the plan's content after them, without repeating them. If a section would still be empty, write `None.` rather than dropping it.
 
 Prepend to every body:
 
