@@ -10,6 +10,8 @@ Personal Agent Skills ([agentskills.io](https://agentskills.io) format). This re
 - `blast-radius` - prove a change is safe before merging, not just assert it
 - `log-dig` - investigate a question against runtime/hardware log files without blowing out context
 - `continual-learning` - automatically keeps `~/.claude/CLAUDE.md` current from session transcripts (needs its Stop hook wired in manually - see `continual-learning/HOOK_SETUP.md`)
+- `verify-customer-requests` - turn customer notes (email, chat, call notes) into one verified, labelled GitHub issue per request, checked against past issues for duplicates and contradicted decisions
+- `plan-issue` - grill on one GitHub issue and write its fix plan into it; on customer-request issues, also settles their questions and labels (shares `verify-customer-requests/references/issue-contract.md`)
 
 ## Installing (linking into your coding agents)
 
