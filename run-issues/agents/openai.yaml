@@ -1,0 +1,5 @@
+interface:
+  display_name: "Run Issues"
+  short_description: "Implement a milestone's ready issues, one PR each"
+policy:
+  allow_implicit_invocation: false

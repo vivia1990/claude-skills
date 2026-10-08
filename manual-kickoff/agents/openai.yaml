@@ -1,0 +1,5 @@
+interface:
+  display_name: "Manual Kickoff"
+  short_description: "Plan a user manual as one issue per workflow"
+policy:
+  allow_implicit_invocation: false

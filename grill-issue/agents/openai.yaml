@@ -1,0 +1,5 @@
+interface:
+  display_name: "Grill Issue"
+  short_description: "Grill one issue into shape against its template"
+policy:
+  allow_implicit_invocation: false

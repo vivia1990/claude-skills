@@ -1,0 +1,5 @@
+interface:
+  display_name: "Continual Learning"
+  short_description: "Keep CLAUDE.md current from session transcripts"
+policy:
+  allow_implicit_invocation: false
