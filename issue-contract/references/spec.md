@@ -89,7 +89,16 @@ Two labels belong to every contract:
 - `ready` (`0e8a16`, "Can be implemented"): the issue can be implemented.
 - `awaiting-reply` (`fbca04`, "Blocked on an answer from someone outside the team"): a question for someone outside the session is open. Never together with `ready`.
 
-An issue with neither needs grilling (`/grill-issue`). Every other label comes from the contract's Labels field, or from the opener (a plan's `Labels:` line, `.plan-to-issues.yml`).
+An issue with neither needs grilling (`/grill-issue`).
+
+Two more set how deeply the implementer's code review looks, for every contract too:
+
+- `review:xhigh` (`d4c5f9`, "Code review at xhigh"): the change touches authentication or permissions, file uploads or deletion, money, migrations or the shape of stored or queued data, or code other features share.
+- `review:max` (`5319e7`, "Code review at max"): only when the user asks for it.
+
+An issue with neither is reviewed at `high`, never lower. With both, the higher wins.
+
+Every other label comes from the contract's Labels field, or from the opener (a plan's `Labels:` line, `.plan-to-issues.yml`).
 
 Colours are 6-digit hex without `#`; the forge references add it where the forge needs one. A label nothing describes gets colour `428BCA` and no description. Create only the labels that are missing and never modify an existing one: a repo's own `bug` keeps its description and colour.
 
@@ -132,10 +141,12 @@ Griller:
 - Asks one question at a time.
 - Writes nothing to the forge before the user approves the change.
 - Adds `ready` only when every Ready checklist item is ticked and `awaiting-reply` is off.
+- Adds `review:max` only when the user asks for it.
 
 Implementer:
 
 - Starts only on a `ready` issue, changes only what its issue and contract allow, and never changes `.issue-contracts/`.
+- Reviews a change to code at the level the issue's review label gives, `high` without one.
 
 ## Opening issues
 

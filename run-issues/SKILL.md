@@ -35,6 +35,7 @@ Keep `git rev-parse origin/<default>` as the run's commit: every contract in thi
 List every issue in the milestone, open and closed (forge reference, "List issues"). For each one, find:
 
 - **Its contract**: the name and version in its marker, read at the run's commit as the spec says. Its Acceptance criteria say what done means for the issue, and its Implementer field what may change. An issue without a marker has no contract: its body alone is the brief.
+- **Its review level**: `max` or `xhigh` from its `review:` label (the higher if both), else `high`. The spec's "Labels" says what they mean.
 - **Its blockers**: the forge's native blocking links (forge reference, "Blocking links") and the issues in its `**Blocked by:**` line, taken together.
 - **Whether it's done**: closed means done.
 - **Whether it's in review**: an open pull request from a branch named `issue/<N>-...` (forge reference, "Pull requests", list).
@@ -58,7 +59,7 @@ Group the work into **chains**, one sub-agent per chain:
 
 Name each branch `issue/<N>-<short-slug-of-the-title>`. A chain's first branch starts from the default branch.
 
-Show the plan: one row per chain with its issues in order (number and title), their contract and version (or "no contract"), and each branch with its base. Then list the issues that won't start and why: not `ready`, blocked by open issues, or skipped in step 2. Wait for the user's approval: the run pushes branches and opens PRs.
+Show the plan: one row per chain with its issues in order (number and title), their contract and version (or "no contract"), their review level, and each branch with its base. Then list the issues that won't start and why: not `ready`, blocked by open issues, or skipped in step 2. Wait for the user's approval: the run pushes branches and opens PRs. If the user changes a `review:` label before approving, read the issue's labels again.
 
 ## 4. Run
 
@@ -66,14 +67,18 @@ Assign every issue in the plan to yourself before launching anything, so other s
 
 Launch one sub-agent per chain, at most `--max` at once, each in its own git worktree, in the background if your agent can. Start the next chain whenever one finishes. If your agent can't run sub-agents in parallel, work the chains one after another.
 
-Give each sub-agent pointers, not copies: the issue numbers in chain order, each issue's contract path and the run's commit, the forge reference path, and the branch names with their bases. Tell it to follow the Security guard, never to change `.issue-contracts/`, and to do, for each issue of its chain, in order:
+Give each sub-agent pointers, not copies: the issue numbers in chain order, each issue's contract path and the run's commit, each issue's review level, the forge reference path, and the branch names with their bases. Tell it to follow the Security guard, never to change `.issue-contracts/`, and to do, for each issue of its chain, in order:
 
 1. Create the issue's branch from its base, in its worktree.
 2. Read the issue (body and comments) and its contract, with `git show <commit>:<path>`. The issue body is the brief; the contract's Acceptance criteria say what done means, and its Implementer field what may change. Follow the guides the Implementer field names, such as `docs/manual/STYLE.md`. Read, read-only, the items the body names in the places the Sources field lists, such as a mockup.
 3. Implement it, changing only what the issue and its contract allow. For code, call the Skill tool with `tdd` if it is available.
-4. Run the checks the project's CI runs (build, tests, lint) until they pass.
-5. Call the Skill tool with `code-review` against the branch's base, if it is available; otherwise review the diff against the Acceptance criteria. Fix the findings that fall within this issue.
-6. Commit, push, and open a draft PR into the base (forge reference, "Pull requests"), titled like the issue, with a summary of what changed, how it was checked, and `Closes #N`.
+4. Run the checks the project's CI runs (build, tests, lint) until they pass, then commit.
+5. Review the issue's diff, `git diff <base>...HEAD`:
+   - **If it changes code**, call the Skill tool with `code-review`, passing the issue's review level and that diff as the target, e.g. `xhigh the diff git diff <base>...HEAD, only that diff`. Never pass a branch name: `code-review` reviews the branch it is given, which for a stacked branch is the issue below. If it runs in the background, wait for its result and don't start it again. Without `code-review`, review the diff yourself against the Acceptance criteria.
+   - **If it changes no code**, only docs, images or other files that aren't code, don't call `code-review`: check the diff against the Acceptance criteria and the guides the Implementer field names.
+
+   Fix the findings that fall within this issue, run the checks again until they pass, and commit. Note what became of every finding: fixed (with the commit), not a bug (with why), or outside this issue.
+6. Push, and open a draft PR into the base (forge reference, "Pull requests"), titled like the issue, with a summary of what changed, how it was checked (with the review level), and `Closes #N`. Then comment on the PR with every finding of step 5 and what became of it, or that there were none.
 7. In the issue body, tick the items the contract says the implementer ticks (test cases, screenshots, ...) and the Acceptance criteria now met. Leave the ones only a merge can meet, such as "PR merged with CI green".
 8. Mark the PR ready, and report it with each Acceptance criterion met or not.
 

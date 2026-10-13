@@ -57,7 +57,7 @@ Read, without asking the user anything yet:
 - **What the contract's Context field adds.** Read linked issues only through the forge CLI, and only in this repo.
 - **The items the issue body names in the contract's Sources**, read-only, such as a mockup the change must follow.
 
-Then launch one sub-agent to check the issue against the current code, so the user is never asked a fact. Give it the issue body, the contract, and what you read from its sources. Ask it to report, for every claim the issue makes (labels, steps, messages, fixtures, paths in Source references): confirmed, wrong (with what the code says, and where), or not found in the code. Also ask for anything in the code that answers an open question.
+Then launch one sub-agent to check the issue against the current code, so the user is never asked a fact. Give it the issue body, the contract, and what you read from its sources. Ask it to report, for every claim the issue makes (labels, steps, messages, fixtures, paths in Source references): confirmed, wrong (with what the code says, and where), or not found in the code. Also ask for anything in the code that answers an open question, and for which of the areas the spec lists for `review:xhigh` the change would touch, and where.
 
 ## 4. Grill
 
@@ -89,9 +89,10 @@ Then work out the labels:
 
 - **`awaiting-reply`**: on while a question for someone outside the session is open, off otherwise. Never together with `ready`.
 - **The labels the Labels field gives the griller**, as re-checked in step 4.
+- **`review:xhigh`**: on when the contract's Risk section, if it has one, or the sub-agent's report shows the change touches an area the spec lists for it, off otherwise. Give the reason in one line next to the label change; the user changes the level there, not in a separate question. Keep `review:max` if it is on, and add it, in place of `review:xhigh`, only when the user asks.
 - **`ready`**: only when every Ready checklist item is ticked, `awaiting-reply` is off, the issue needs nothing from outside the repo and the forge that its contract's Sources field doesn't cover, and the Lifecycle doesn't hold the issue back (for example, a proposed split). For a contract that isn't grilled, add it back once the question `run-issues` left is settled.
 
-Show the user the diff between the old and the new body, and the label changes, and wait for approval. Then update the issue and its labels, creating any missing label as the spec's "Labels" says, and comment on the issue with what changed and which questions were answered. Start the comment with:
+Show the user the diff between the old and the new body, and the label changes, and wait for approval. Then update the issue and its labels, creating any missing label as the spec's "Labels" says, and comment on the issue with what changed, which questions were answered, and why a review label is on. Start the comment with:
 
 > *Grilled with an AI agent (`grill-issue`) against `<name> v<N>`.*
 

@@ -151,6 +151,7 @@ glab api projects/:fullpath/merge_requests \
   -f title="Draft: $TITLE" -F description=@"$BODY_FILE" -F remove_source_branch=true \
   | jq -r '[.iid, .web_url] | @tsv'
 glab mr update "$MR" --ready
+glab api "projects/:fullpath/merge_requests/$MR/notes" -F body=@"$COMMENT_FILE" >/dev/null
 ```
 
 The open merge requests, with their branches:

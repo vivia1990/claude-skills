@@ -129,6 +129,7 @@ Open as a draft, mark ready once the checks pass. Put `Closes #N` in the body, s
 gh pr create --draft --base "$BASE" --head "$BRANCH" --title "$TITLE" --body-file "$BODY_FILE"
 gh pr view "$BRANCH" --json number,url --jq '[.number, .url] | @tsv'
 gh pr ready "$PR"
+gh pr comment "$PR" --body-file "$COMMENT_FILE"
 ```
 
 The open pull requests, with their branches:
