@@ -1,0 +1,5 @@
+interface:
+  display_name: "Brainstorm"
+  short_description: "Work an idea into a decision, one question at a time"
+policy:
+  allow_implicit_invocation: false

@@ -6,6 +6,7 @@ Personal Agent Skills ([agentskills.io](https://agentskills.io) format). This re
 
 - `recap` - write a before/issue/changed summary for a branch's changes
 - `verify-findings` - verify pasted review findings against the codebase without editing code
+- `brainstorm` - work an idea into a decision before any code shape exists: one blocking question per step, at most three genuinely different options, one parallel sub-agent stewarding each (and reporting the evidence against it), the user decides; every decision and the assumptions it rests on land in a durable log that the session can be resumed from. Hands off to `architect`, `plan-to-issues` or `prototype`. Runs only through `/brainstorm <input>`
 - `architect` - sketch a design before implementing, with parallel candidate exploration
 - `blast-radius` - prove a change is safe before merging, not just assert it
 - `log-dig` - investigate a question against runtime/hardware log files without blowing out context
