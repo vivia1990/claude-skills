@@ -1,6 +1,6 @@
 ---
 name: manual-kickoff
-description: Plan a user manual for an existing web, desktop or CLI project that has none. Sub-agents read the source code to understand the product, its roles and sections, then find every user workflow; the skill writes a plan with a setup issue, an intro issue and one issue per workflow, whose templates are the contract for the griller and the writer, then hands the plan to plan-to-issues. Run only through "/manual-kickoff".
+description: Plan a user manual for an existing web, desktop or CLI project that has none. Sub-agents read the source code to understand the product, its roles and sections, then find every user workflow; the skill writes a plan with a setup issue, an intro issue and one issue per workflow, whose contracts are the agreement between the griller and the writer, then hands the plan to plan-to-issues. Run only through "/manual-kickoff".
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ Plan a user manual for a project that has none. This skill only plans. It ends w
 2. `run-issues` turns each `ready` issue into one Markdown file, in one PR.
 3. The build from the setup issue turns the Markdown into one PDF.
 
-The issue templates are the contract between those steps (see [The contract](#the-contract)).
+The project's issue contracts (`.issue-contracts/`) are the agreement between those steps (see [The contract](#the-contract)).
 
 The manual is for people who use the running product, grouped by role (guest, user, admin, ...). It doesn't cover installing, deploying or developing the product.
 
@@ -24,6 +24,7 @@ Find out, by reading the repo:
 
 - **Project type**: web, desktop or CLI. If the project is only an API/service or a library, stop: a user manual isn't the right document for it, an API reference is.
 - **Existing manual**: if `docs/manual/` or another end-user manual exists, stop and say so. This skill only plans manuals for projects that have none.
+- **Old layout**: if `.github/ISSUE_TEMPLATE/` or `.gitlab/issue_templates/` has a template whose body starts with `<!-- contract:`, stop and tell the user to run `/issue-contract migrate`, then this skill again.
 - **UI language**: the default locale of the i18n files, else the language of the hard-coded labels. The manual and the issue bodies are written in it. One language per run.
 - **Inputs to reuse**: the glossary of domain terms (`GLOSSARY.md`, or the per-context ones `GLOSSARY-MAP.md` points at, or the older `CONTEXT.md`) and `docs/plans/e2e-kickoff.md` (workflows already found). Give them to the sub-agents as a starting point; the sub-agents still check everything against the code.
 
@@ -73,15 +74,11 @@ Order the workflows in a chapter by the user's journey: first-time setup, then d
 
 **Checkpoint:** show one table per chapter: order, workflow, role, rank, depends on, source files. The user adds, removes, re-ranks, reorders or merges entries.
 
-## 3. Install the templates
+## 3. Install the contracts
 
-Detect the forge as step 1 of `plan-to-issues` does: `.plan-to-issues.yml` if it exists, else the host of `origin`, checking `gh` and `glab` login for hosts other than github.com. If that is still ambiguous, ask the user once and write the answer into `.plan-to-issues.yml`, so every later skill agrees. The project's issue template folder is `.github/ISSUE_TEMPLATE/` on GitHub (GitHub Enterprise included), `.gitlab/issue_templates/` on GitLab.
+Read `../issue-contract/references/spec.md` (next to this skill's folder) and follow its "Opening issues" for `manual-setup`, `manual-intro` and `manual-workflow`: use the project's newest published version of each, or seed `v1` from this skill's `templates/`. A seeded contract isn't committed yet; step 4 commits it with the plan.
 
-If `manual-setup.md`, `manual-intro.md` or `manual-workflow.md` isn't there yet, copy it from this skill's `templates/`. On GitHub, add frontmatter (`name`, `about`, `labels: [manual]`) so the template also shows in the web UI. If a template already exists, use it as it is: the project's version wins.
-
-Keep the templates' HTML comments. They are the contract that `grill-issue` and `run-issues` follow, and `plan-to-issues` copies them into every issue.
-
-**Checkpoint:** show the templates. The user edits them now, because the plan is written against their sections.
+**Checkpoint:** show the contracts. The user adapts a seeded one now, because the plan is written against its sections. A published version is never edited: for changes to one, the user runs `/issue-contract new <name>`, and you continue with the new version once it is published.
 
 ## 4. Write the plan
 
@@ -97,20 +94,20 @@ Milestone: User manual
 
 ## Issue: Manual — Set up the manual
 Type: manual-setup
-Labels: manual, ready
-<one subsection per ## section of the manual-setup template>
+Labels: manual
+<one subsection per ## section of the manual-setup contract>
 
 ## Issue: Manual — Introduction
 Type: manual-intro
 Depends on: Manual — Set up the manual
 Labels: manual, manual:intro
-<one subsection per ## section of the manual-intro template>
+<one subsection per ## section of the manual-intro contract>
 
 ## Issue: Manual — <Chapter> — <Workflow>
 Type: manual-workflow
 Depends on: Manual — Set up the manual
 Labels: manual, manual:<chapter-slug>
-<one subsection per ## section of the manual-workflow template>
+<one subsection per ## section of the manual-workflow contract>
 
 ...one issue per critical or important workflow...
 
@@ -147,33 +144,33 @@ Rules for the content:
   Never write selectors, element IDs or code.
 - **List screenshots by id, screen and state**, and put each id on the step that shows it.
 - **Open questions hold only what the code can't answer**: why users do this, which option to recommend, what to leave out, warnings the reader needs, names where the code and the UI disagree. Write each one as an unchecked checklist item. If the code doesn't show how something behaves, write an open question, not a step.
-- Keep the template's `##` headings in English as they are: they are the contract. Write the content in the manual's language.
-- Leave `Ready checklist` and `Acceptance criteria` to the template, which already has their items. Add an item only if this issue needs one the template doesn't have.
+- Keep the contract's `##` headings in English, as they are. Write the content in the manual's language.
+- Leave `Ready checklist` and `Acceptance criteria` to the contract, which already has their items. Add an item only if this issue needs one the contract doesn't have.
 - List the source files from step 2 in every issue.
 - Don't put anything in the plan that the code doesn't support.
 
-**Checkpoint:** the user reviews the plan file. Apply their changes, then commit only that file and any newly installed templates once they approve.
+**Checkpoint:** the user reviews the plan file. Apply their changes, then commit the plan file and any contract seeded in step 3 once they approve. Then publish them as the spec's "Opening issues" says: on the default branch, ask before pushing; on any other branch, stop here and tell the user to run `/plan-to-issues docs/plans/manual-kickoff.md --contract manual-workflow` once it is merged.
 
 ## 5. Open the issues
 
-Ask: "Open the issues now?" If yes, call the Skill tool with `plan-to-issues` and the arguments `docs/plans/manual-kickoff.md --template manual-workflow`.
+Ask: "Open the issues now?" If yes, call the Skill tool with `plan-to-issues` and the arguments `docs/plans/manual-kickoff.md --contract manual-workflow`.
 
-`plan-to-issues` shows its own preview and asks before creating anything. If the user says no, tell them to run `/plan-to-issues docs/plans/manual-kickoff.md --template manual-workflow` later.
+`plan-to-issues` shows its own preview and asks before creating anything. If the user says no, tell them to run `/plan-to-issues docs/plans/manual-kickoff.md --contract manual-workflow` later.
 
 Finish by telling the user what happens next:
 
 1. `/run-issues "User manual"` implements the setup issue now: it is already `ready`.
-2. `/grill-issue manual-intro` and `/grill-issue manual-workflow` shape the other issues, one per run, and add `ready`.
+2. `/grill-issue --contract manual-intro` and `/grill-issue --contract manual-workflow` shape the other issues, one per run, and add `ready`.
 3. Once the setup PR is merged, `/run-issues "User manual"` writes every `ready` issue in parallel. Run it again as more issues become `ready`.
 
 ## The contract
 
-Each template starts with an HTML comment that names it and its version (`contract: manual-workflow v1`) and states the rules, and has a short comment under each section. `grill-issue` and `run-issues` take the rules from the template file. `plan-to-issues` also copies the comments into every issue body, so a person reading the issue on the forge sees them; where the copy and the file differ, the file wins. In short:
+The manual's three contracts follow `../issue-contract/references/spec.md`. Each version is a file in the project's `.issue-contracts/`, every issue names the version it was written under in a marker on its first line, and `grill-issue` and `run-issues` read that exact version. `plan-to-issues` copies each section's comment into the issue, so a person reading it on the forge sees who owns what; the rules stay in the contract file. In short:
 
-- **No `ready` label means the issue still needs grilling.** There is no other state label. The setup issue is created `ready`, because its choices were reviewed at the plan checkpoint. The intro and workflow issues are not.
+- **No `ready` label means the issue still needs grilling.** The setup contract isn't grilled: its issue is opened `ready`, because its choices were reviewed at the plan checkpoint. The intro and workflow issues are grilled.
 - The griller adds `ready` only when every item in the issue's `Ready checklist` is ticked.
-- Only the planner writes `Workflow`, `Output file` and `Source references`. The griller refines the other content sections, answers `Open questions` inline, and may add new ones, which block `ready` until answered.
+- Only the opener writes `Workflow`, `Output file` and `Source references`. The griller refines the other content sections, answers `Open questions` inline, and may add new ones, which block `ready` until answered.
 - If an issue should be split, merged or renamed, the griller comments on it and doesn't add `ready`. A person decides.
 - A writer starts only on a `ready` issue and changes only its output file, its capture scenario and its screenshots.
 
-If a project changes these rules, it changes the comments in its templates and bumps the version (`v1` → `v2`). `grill-issue` and `run-issues` notice an issue whose version differs from its template's and ask before moving it to the new version, so old issues are never worked under new rules by mistake.
+To change these rules for a project, add a new version with `/issue-contract new <name>`. Issues already open keep the version they name, so they are never worked under new rules by mistake; `grill-issue` offers to move an issue that isn't `ready` yet.

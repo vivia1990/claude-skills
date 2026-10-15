@@ -1,0 +1,5 @@
+interface:
+  display_name: "Issue Contract"
+  short_description: "Keep a project's versioned issue contracts"
+policy:
+  allow_implicit_invocation: false

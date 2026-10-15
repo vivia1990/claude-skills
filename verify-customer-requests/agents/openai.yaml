@@ -1,0 +1,5 @@
+interface:
+  display_name: "Verify Customer Requests"
+  short_description: "Turn customer notes into verified, labelled issues"
+policy:
+  allow_implicit_invocation: false

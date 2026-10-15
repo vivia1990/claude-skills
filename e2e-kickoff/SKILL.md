@@ -10,11 +10,13 @@ Plan end-to-end tests for a project with none, so coding agents can later verify
 1. `grill-issue` shapes each workflow issue with the user and adds the `ready` label.
 2. `run-issues` writes the tests for each `ready` issue: one issue, one agent, one PR.
 
-The issue templates are the contract between those steps.
+The project's issue contracts (`.issue-contracts/`) are the agreement between those steps. `../issue-contract/references/spec.md` (next to this skill's folder) says how they work.
 
 Run from the project's repo root. Each step ends at a checkpoint: wait for the user's answer before moving on.
 
 ## 1. Find the workflows
+
+First check the project's layout: if `.github/ISSUE_TEMPLATE/` or `.gitlab/issue_templates/` has a template whose body starts with `<!-- contract:`, stop and tell the user to run `/issue-contract migrate`, then this skill again.
 
 A workflow is something a user does from start to finish to get a result: register, log in, insert an article, export a report, run `tool sync`.
 
@@ -59,15 +61,11 @@ Check what the project already has (test runner, CI config, package manager, how
 
 **Checkpoint:** the user confirms or changes the choices.
 
-## 3. Install the templates
+## 3. Install the contracts
 
-Detect the forge as step 1 of `plan-to-issues` does: `.plan-to-issues.yml` if it exists, else the host of `origin`, checking `gh` and `glab` login for hosts other than github.com. If that is still ambiguous, ask the user once and write the answer into `.plan-to-issues.yml`, so every later skill agrees. The project's issue template folder is `.github/ISSUE_TEMPLATE/` on GitHub (GitHub Enterprise included), `.gitlab/issue_templates/` on GitLab.
+Follow the spec's "Opening issues" for `e2e-setup` and `e2e-workflow`: use the project's newest published version of each, or seed `v1` from this skill's `templates/`. A seeded contract isn't committed yet; step 4 commits it with the plan.
 
-If `e2e-setup.md` or `e2e-workflow.md` isn't there yet, copy it from this skill's `templates/`. On GitHub, add frontmatter (`name`, `about`, `labels: [e2e]`) so the template also shows in the web UI. If a template already exists, use it as it is: the project's version wins.
-
-Keep the templates' HTML comments. They are the contract that `grill-issue` and `run-issues` follow: the version, who may change each section, the Ready checklist. `plan-to-issues` copies them into every issue.
-
-**Checkpoint:** show the templates. The user edits them now, because the plan is written against their sections.
+**Checkpoint:** show the contracts. The user adapts a seeded one now, because the plan is written against its sections. A published version is never edited: for changes to one, the user runs `/issue-contract new <name>`, and you continue with the new version once it is published.
 
 ## 4. Write the plan
 
@@ -80,14 +78,14 @@ Milestone: E2E tests
 
 ## Issue: Set up e2e testing
 Type: e2e-setup
-Labels: e2e, ready
-<one subsection per ## section of the e2e-setup template>
+Labels: e2e
+<one subsection per ## section of the e2e-setup contract>
 
 ## Issue: E2E — <workflow name>
 Type: e2e-workflow
 Depends on: Set up e2e testing[, E2E — <other workflow>]
 Labels: e2e
-<one subsection per ## section of the e2e-workflow template>
+<one subsection per ## section of the e2e-workflow contract>
 
 ...one workflow issue per critical or important workflow...
 
@@ -111,20 +109,20 @@ Rules for the content:
   ```
 - Refer to fixtures by name. Every fixture must be defined in the setup issue.
 - List the source files from Step 1, so the implementing agent knows where to start.
-- The setup issue is created `ready`: its choices were reviewed at the checkpoints. Workflow issues are not; they wait for `grill-issue`.
-- Leave `Ready checklist` and `Acceptance criteria` to the template, which already has their items. Add an item only if this issue needs one the template doesn't have.
+- The setup issue's contract isn't grilled, so `plan-to-issues` opens it `ready`: its choices were reviewed at the checkpoints. Workflow issues wait for `grill-issue`.
+- Leave `Ready checklist` and `Acceptance criteria` to the contract, which already has their items. Add an item only if this issue needs one the contract doesn't have.
 - Don't put anything in the plan that the code doesn't support. If the code doesn't show how something behaves, write it as an open question in the issue (an unchecked checklist item), not as an assertion.
 
-**Checkpoint:** the user reviews the plan file. Apply their changes, then commit only that file (and any newly installed templates) once they approve.
+**Checkpoint:** the user reviews the plan file. Apply their changes, then commit the plan file and any contract seeded in step 3 once they approve. Then publish them as the spec's "Opening issues" says: on the default branch, ask before pushing; on any other branch, stop here and tell the user to run `/plan-to-issues docs/plans/e2e-kickoff.md --contract e2e-workflow` once it is merged.
 
 ## 5. Open the issues
 
-Ask: "Open the issues now?" If yes, call the Skill tool with `plan-to-issues` and the arguments `docs/plans/e2e-kickoff.md --template e2e-workflow`.
+Ask: "Open the issues now?" If yes, call the Skill tool with `plan-to-issues` and the arguments `docs/plans/e2e-kickoff.md --contract e2e-workflow`.
 
-`plan-to-issues` shows its own preview and asks before creating anything. If the user says no, tell them to run `/plan-to-issues docs/plans/e2e-kickoff.md --template e2e-workflow` later.
+`plan-to-issues` shows its own preview and asks before creating anything. If the user says no, tell them to run `/plan-to-issues docs/plans/e2e-kickoff.md --contract e2e-workflow` later.
 
 Finish by telling the user what happens next:
 
 1. `/run-issues "E2E tests"` implements the setup issue now: it is already `ready`.
-2. `/grill-issue e2e-workflow` shapes the workflow issues, one per run, and adds `ready`.
+2. `/grill-issue --contract e2e-workflow` shapes the workflow issues, one per run, and adds `ready`.
 3. Once the setup PR is merged, `/run-issues "E2E tests"` writes the tests for every `ready` issue. Run it again as more issues become `ready`.

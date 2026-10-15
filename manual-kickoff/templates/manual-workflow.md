@@ -1,15 +1,18 @@
-<!-- contract: manual-workflow v1
-One workflow of the user manual. An "Other tasks" issue holds several minor workflows: each section below is split into one part per workflow.
-Lifecycle: no `ready` label means this issue still needs grilling. The griller shapes it with the user and adds `ready` only when every item of the Ready checklist is ticked. A writer starts only on a `ready` issue.
-Ownership: the planner drafted every section from the source code. Sections marked "planner only" are never changed by the griller. If this issue should be split, merged or renamed, the griller comments on it and doesn't add `ready`; a person decides.
-Headings are the contract: keep them in English and in this order. The content is written in the manual's language.
+<!-- contract: manual-workflow v1 -->
+<!--
+Purpose: one workflow of the user manual. An "Other tasks" issue holds several minor workflows: each section below is split into one part per workflow.
+Lifecycle: grilled. No `ready` label means this issue still needs grilling: the griller shapes it with the user and adds `ready` only when every item of the Ready checklist is ticked. If this issue should be split, merged or renamed, the griller comments on it and doesn't add `ready`; a person decides.
+Writing: headings stay in English, as they are, in this order. The content is written in the manual's language.
+Questions: Open questions are answered by the user.
+Labels: the opener applies `manual`.
+Implementer: change only the output file below, this workflow's capture scenario and its screenshots, following `docs/manual/STYLE.md`.
 -->
 
 ## Workflow
-<!-- planner only: name · chapter · role · rank, then one line on what the reader achieves -->
+<!-- opener only: name · chapter · role · rank, then one line on what the reader achieves -->
 
 ## Output file
-<!-- planner only: the one Markdown file the writer creates, e.g. docs/manual/02-admin-panel/03-create-user.md -->
+<!-- opener only: the one Markdown file the writer creates, e.g. docs/manual/02-admin-panel/03-create-user.md -->
 
 ## Before you start
 <!-- griller refines: the role, data and state needed, and the workflows to do first -->
@@ -27,13 +30,13 @@ Headings are the contract: keep them in English and in this order. The content i
 <!-- griller refines: other parts of the manual the reader may need, by issue or output file -->
 
 ## Source references
-<!-- planner only: the files that prove this workflow exists, with paths -->
+<!-- opener only: the files that prove this workflow exists, with paths -->
 
 ## Open questions
 <!-- griller resolves: only what the code can't answer. Answer inline and tick: - [x] <question> — **A:** <answer>. The griller may add questions; any unticked one blocks `ready`. -->
 
 ## Ready checklist
-<!-- the griller ticks these, then adds `ready` -->
+<!-- griller ticks these, then adds `ready` -->
 
 - [ ] Every open question is answered inline
 - [ ] Steps cover the workflow from start to finish, each with what the user sees
@@ -42,7 +45,7 @@ Headings are the contract: keep them in English and in this order. The content i
 - [ ] Nothing is left as TBD or a placeholder outside Open questions
 
 ## Acceptance criteria
-<!-- for the writer -->
+<!-- implementer ticks these -->
 
 - [ ] The issue had the `ready` label when work started
 - [ ] Only the output file above, this workflow's capture scenario and its screenshots are added or changed
