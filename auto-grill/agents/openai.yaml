@@ -1,0 +1,5 @@
+interface:
+  display_name: "Auto Grill"
+  short_description: "Grill issues without the user; what needs a person goes to /grill-issue"
+policy:
+  allow_implicit_invocation: false

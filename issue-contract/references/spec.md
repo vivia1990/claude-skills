@@ -6,6 +6,7 @@ How every issue skill agrees on what an issue is. A contract describes one kind 
 
 - **Opener**: a skill that opens issues: `plan-to-issues` (also for `e2e-kickoff` and `manual-kickoff`) and `verify-customer-requests`.
 - **Griller**: `grill-issue`. Shapes one issue with the user until it is `ready`.
+- **Auto-griller**: `auto-grill`. Grills issues without the user: per issue, a griller sub-agent follows `grill-issue`, and an answerer sub-agent answers in the user's place by `auto-grill`'s procedure. It writes every answer it settles; an issue left with questions only a person can settle also gets `auto-grill-failed`.
 - **Implementer**: a `run-issues` sub-agent, or a person, working a `ready` issue.
 - **Maintainer**: whoever keeps the project's contracts, with `/issue-contract`.
 
@@ -89,7 +90,7 @@ Two labels belong to every contract:
 - `ready` (`0e8a16`, "Can be implemented"): the issue can be implemented.
 - `awaiting-reply` (`fbca04`, "Blocked on an answer from someone outside the team"): a question for someone outside the session is open. Never together with `ready`.
 
-An issue with neither needs grilling (`/grill-issue`).
+An issue with neither needs grilling (`/grill-issue`, or `/auto-grill` unless it has `auto-grill-failed`).
 
 Two more set how deeply the implementer's code review looks, for every contract too:
 
@@ -97,6 +98,11 @@ Two more set how deeply the implementer's code review looks, for every contract 
 - `review:max` (`5319e7`, "Code review at max"): only when the user asks for it.
 
 An issue with neither is reviewed at `high`, never lower. With both, the higher wins.
+
+Two more record auto-grilling, for every contract too:
+
+- `auto-grilled` (`c5def5`, "Grilled by an AI agent; decisions in a comment"): an AI agent answered the grilling questions in the user's place, and its decision log is a comment on the issue. It stays as history.
+- `auto-grill-failed` (`e99695`, "Auto-grilling needs a person"): auto-grilling left questions only a person can settle, unticked, or stopped before writing anything; a comment says which, with a proposed answer where it has one. Never together with `ready`: the next `/auto-grill` run removes it from an issue that has become `ready`, or the user removes it by hand.
 
 Every other label comes from the contract's Labels field, or from the opener (a plan's `Labels:` line, `.plan-to-issues.yml`).
 
@@ -143,6 +149,12 @@ Griller:
 - Adds `ready` only when every Ready checklist item is ticked and `awaiting-reply` is off.
 - Adds `review:max` only when the user asks for it.
 
+Auto-griller:
+
+- Writes to the forge only after the user's one approval of its plan (or `--yes`, typed by the user), and changes an issue only after that issue's answerer has checked the change. Its griller sub-agent keeps every griller rule above, with these two checks standing for the user's approval.
+- Never adds `review:max`: no user is there to ask for it.
+- Tags every answer it gives in the user's place `(auto-grill)`, and leaves unticked, with no answer, every question only a person can settle: product questions no earlier decision of the user's answers, the ones the contract gives to a person, and the ones for someone outside the team.
+
 Implementer:
 
 - Starts only on a `ready` issue, changes only what its issue and contract allow, and never changes `.issue-contracts/`.
@@ -174,6 +186,7 @@ Never copy the rules comment or the `from:` line into an issue. Apply the labels
 ## Issues without a marker
 
 - **The griller** adopts an unmarked issue only when the user names it, and never one that is `ready`. It proposes the contract whose headings the issue matches best, and on the user's go-ahead moves the content into that contract's sections and adds the marker.
+- **The auto-griller** adopts an unmarked issue, named or not, only when it matches one contract trivially: every `##` heading of the issue is a section of that contract's newest version, ignoring case and spacing; no other contract matches as well; and the issue isn't `ready`. Its plan lists each adoption. It leaves every other unmarked issue to `/grill-issue`, with no label.
 - **The implementer** works an unmarked `ready` issue with its body alone as the brief.
 
 ## Versions
